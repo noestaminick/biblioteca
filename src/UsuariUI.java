@@ -1,83 +1,130 @@
 import javax.swing.*;
 import java.awt.event.*;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.Vector;
 
-
-public class UsuariUI extends JFrame{
+public class UsuariUI extends JFrame {
     private JTextField cerca;
     private JTable llibres;
     private JTable historic;
-
     private Connection conn;
+    private int idUsuari; // Identificador de l'usuari actual
 
-    public UsuariUI(Connection conn){
-        this.conn=conn;
+    public UsuariUI(Connection conn, int idUsuari) {
+        this.conn = conn;
+        this.idUsuari = idUsuari;
 
-        setTitle("Interfície usuari");
-        setSize(800,600);
+        setTitle("Interfície Usuari");
+        setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        //distribució
-        JPanel mainPanel=new JPanel();
-        distribucioPP(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        // Distribució
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
-        //cerca
-
-        JPanel cercaJPanel=new JPanel();
-        cerca=new JTextField(20);
-        JButton btnCerca=new JButton("Cerca");
+        // Cerca
+        JPanel cercaPanel = new JPanel();
+        cerca = new JTextField(20);
+        JButton btnCerca = new JButton("Cerca");
         btnCerca.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e){
+            public void actionPerformed(ActionEvent e) {
                 cercaLlibres();
             }
         });
-        cercaPaneladd(new JLabel("Cerca:"));
-        cercaPaneladd(cerca);
-        cercaPaneladd(btnCerca);
+        cercaPanel.add(new JLabel("Cerca:"));
+        cercaPanel.add(cerca);
+        cercaPanel.add(btnCerca);
 
-        //llibres
+        // Llibres
+        JPanel llibresPanel = new JPanel();
+        llibres = new JTable();
+        JScrollPane llibresScrollPane = new JScrollPane(llibres);
+        llibresPanel.add(llibresScrollPane);
 
-        JPanel llibresJPanel=new JPanel();
-        llibresT=new JTable();
-        JScrollPane llibresScrollPane(llibresT);
-        llibresPanel(llibresScrollPane);
+        // Històric
+        JPanel historicPanel = new JPanel();
+        historic = new JTable();
+        JScrollPane historicScrollPane = new JScrollPane(historic);
+        historicPanel.add(historicScrollPane);
 
-        //historial
-
-        JPanel historicJPanel=new JPanel();
-        historicT=new JTable();
-        JScrollPane historiScrollPane(historicT);
-        historicPanel(historiScrollPane);
-
-        mainPaneladd(cercaJPanel);
-        mainPaneladd(llibresJPanel);
-        mainPaneladd(historicJPanel);
+        mainPanel.add(cercaPanel);
+        mainPanel.add(llibresPanel);
+        mainPanel.add(historicPanel);
 
         add(mainPanel);
-
+        
+        carregarHistoric();
         setVisible(true);
     }
 
-    private void cercaLlibres(){
-        String cercar=cerca.getText();
+    private void cercaLlibres() {
+        String cercar = cerca.getText();
         try {
-            PreparedStatement ps=conn.prepareStatement("SELECT*FROM llibres WHERE titol LIKE ? OR autor LIKE ?");
-            ps.setString(1,"%" + cerca + "%");
-            ps.setString(2,"%" + cercar + "%");
-            ResultSet rs=ps.executeQuery();
+            PreparedStatement ps = conn.prepareStatement("SELECT * FROM llibres WHERE titol LIKE ? OR autor LIKE ?");
+            ps.setString(1, "%" + cercar + "%");
+            ps.setString(2, "%" + cercar + "%");
+            ResultSet rs = ps.executeQuery();
 
-            Vector<Vector<Object>> data=new Vector<Vector<Object>>();
+            Vector<String> columnNames = new Vector<>();
+            columnNames.add("Títol");
+            columnNames.add("Autor");
+            columnNames.add("Any Publicació");
+
+            Vector<Vector<Object>> data = new Vector<>();
             while (rs.next()) {
-                Vector<Object> row=new Vector<Object>();
-                row.add(rs.getString("Títol"));
-                row.add(rs.getString("Autor"));
-                row.add(rs.getString("Any_Publicació"));
+                Vector<Object> row = new Vector<>();
+                row.add(rs.getString("titol"));
+                row.add(rs.getString("autor"));
+                row.add(rs.getInt("any_publicacio"));
+                data.add(row);
             }
 
-        } catch (Exception e) {
-            // TODO: handle exception
+            llibres.setModel(new javax.swing.table.DefaultTableModel(data, columnNames));
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void carregarHistoric() {
+        try {
+            PreparedStatement ps = conn.prepareStatement("SELECT * FROM prestecs WHERE id_usuari = ?");
+            ps.setInt(1, idUsuari);
+            ResultSet rs = ps.executeQuery();
+
+            Vector<String> columnNames = new Vector<>();
+            columnNames.add("ID Préstec");
+            columnNames.add("ID Llibre");
+            columnNames.add("Data Préstec");
+            columnNames.add("Data Retorn Prevista");
+            columnNames.add("Data Retorn Real");
+            columnNames.add("Estat");
+
+            Vector<Vector<Object>> data = new Vector<>();
+            while (rs.next()) {
+                Vector<Object> row = new Vector<>();
+                row.add(rs.getInt("id_prestec"));
+                row.add(rs.getInt("id_llibre"));
+                row.add(rs.getDate("data_prestec"));
+                row.add(rs.getDate("data_retorn_prevista"));
+                row.add(rs.getDate("data_retorn_real"));
+                row.add(rs.getString("estat"));
+                data.add(row);
+            }
+
+            historic.setModel(new javax.swing.table.DefaultTableModel(data, columnNames));
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/biblioteca", "root", "");
+            new UsuariUI(conn, 1); // Substitueix 1 per l'ID real de l'usuari actual
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }
