@@ -1,8 +1,8 @@
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.DriverManager;
 
 public class GestorUsuaris {
     private Connection conn;
@@ -11,8 +11,12 @@ public class GestorUsuaris {
         this.conn = conn;
     }
 
-    public void registrarUsuari(String nom, String cognoms, String email, String telefon, String rol) {
-        String query = "INSERT INTO usuaris (Nom, Cognoms, Email, Telefon, Rol, Data_Registre) VALUES (?, ?, ?, ?, ?, NOW())";
+    public Connection getConn() {
+        return conn;
+    }
+
+    public void registrarUsuari(String nom, String cognoms, String email, String telefon, String rol, String password) {
+        String query = "INSERT INTO usuaris (Nom, Cognoms, Email, Telefon, Rol, Password, Data_Registre) VALUES (?, ?, ?, ?, ?, ?, NOW())";
         try {
             PreparedStatement ps = conn.prepareStatement(query);
             ps.setString(1, nom);
@@ -20,6 +24,7 @@ public class GestorUsuaris {
             ps.setString(3, email);
             ps.setString(4, telefon);
             ps.setString(5, rol);
+            ps.setString(6, password);
             ps.executeUpdate();
             System.out.println("Usuari registrat amb èxit!");
         } catch (SQLException e) {
@@ -27,8 +32,8 @@ public class GestorUsuaris {
         }
     }
 
-    public void modificarUsuari(int id_usuari, String nom, String cognoms, String email, String telefon, String rol) {
-        String query = "UPDATE usuaris SET Nom = ?, Cognoms = ?, Email = ?, Telefon = ?, Rol = ? WHERE ID_Usuari = ?";
+    public void modificarUsuari(int id_usuari, String nom, String cognoms, String email, String telefon, String rol, String password) {
+        String query = "UPDATE usuaris SET Nom = ?, Cognoms = ?, Email = ?, Telefon = ?, Rol = ?, Password = ? WHERE ID_Usuari = ?";
         try {
             PreparedStatement ps = conn.prepareStatement(query);
             ps.setString(1, nom);
@@ -36,7 +41,8 @@ public class GestorUsuaris {
             ps.setString(3, email);
             ps.setString(4, telefon);
             ps.setString(5, rol);
-            ps.setInt(6, id_usuari);
+            ps.setString(6, password);
+            ps.setInt(7, id_usuari);
             ps.executeUpdate();
             System.out.println("Usuari modificat amb èxit!");
         } catch (SQLException e) {
@@ -72,12 +78,10 @@ public class GestorUsuaris {
 
     public static void main(String[] args) {
         try {
-            // Utilitza l'usuari root sense contrasenya
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/biblioteca", "root", "");
             GestorUsuaris gestor = new GestorUsuaris(conn);
-            gestor.registrarUsuari("Joan", "Garcia", "joan@example.com", "123456789", "Lector");
-            gestor.modificarUsuari(1, "Joan", "Garcia i López", "joan@example.com", "987654321", "Lector");
-            gestor.eliminarUsuari(1);
+            gestor.registrarUsuari("usuari", "usuari", "usuari@example.com", "123456789", "usuari", "usuari");
+            gestor.registrarUsuari("admin", "adminez", "admin@example.com", "123456789", "bibliotecari", "admin");
             gestor.veureHistorialPrestecs(1);
         } catch (SQLException e) {
             e.printStackTrace();

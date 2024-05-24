@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS usuaris (
     email VARCHAR(255) NOT NULL,
     telefon VARCHAR(255) NOT NULL,
     rol VARCHAR(255) NOT NULL,
-    data_registre DATE NOT NULL
+    data_registre DATE NOT NULL,
+    contrasenya VARCHAR (255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS prestecs (
